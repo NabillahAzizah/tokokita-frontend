@@ -32,23 +32,26 @@ export default function Home({ user, recommendations, handleProductView }) {
 
         {recommendations && recommendations.length > 0 ? (
           <>
-            {recommendations.map((product) => (
-              <div key={product.id} className="recommendation-card">
-                <div className="product-icon">{product.image}</div>
-                <h3 className="product-name">{product.name}</h3>
-                <p className="product-category">{product.category}</p>
-                <p className="product-price">
-                  Rp {product.price.toLocaleString('id-ID')}
-                </p>
-                <button 
-                  className="product-button"
+            <div className="product-grid">
+              {recommendations.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="product-card"
                   onClick={() => handleProductView(product)}
                 >
-                  <span className="product-button-icon">👁️</span>
-                  <span>Lihat Detail</span>
-                </button>
-              </div>
-            ))}
+                  <div className="product-icon">{product.image}</div>
+                  <h3 className="product-name">{product.name}</h3>
+                  <p className="product-category">{product.category}</p>
+                  <p className="product-price">
+                    Rp {product.price.toLocaleString('id-ID')}
+                  </p>
+                  <button className="product-button">
+                    <span className="product-button-icon">👁️</span>
+                    <span>Lihat Detail</span>
+                  </button>
+                </div>
+              ))}
+            </div>
 
             <div className="clickstream-box">
               <div className="clickstream-header">
@@ -80,7 +83,7 @@ export default function Home({ user, recommendations, handleProductView }) {
             <div className="info-box">
               <span className="info-icon">💡</span>
               <p className="info-text">
-                <span className="info-label">Info:</span> Setiap klik produk akan mengirim
+                <strong>Info:</strong> Setiap klik produk akan mengirim
                 clickstream event yang diamankan dengan JWT token Anda
               </p>
             </div>

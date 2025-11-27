@@ -15,26 +15,19 @@ const Navbar = ({ user }) => {
         <div className="navbar-brand">
           <span className="navbar-brand-icon">🛒</span>
           <span className="navbar-brand-text">TokoKita</span>
-          <span className="navbar-shield" title="Secured with JWT & TLS">🛡️</span>
+          <span className="navbar-shield" title="Secured with JWT & TLS">
+            🛡️
+          </span>
         </div>
 
         <div className="navbar-menu">
-          <button
-            onClick={() => navigate('/')}
-            className={`navbar-link ${isActive('/') ? 'active' : ''}`}
-          >
+          <button onClick={() => navigate("/")} className={`navbar-link ${isActive("/") ? "active" : ""}`}>
             Home
           </button>
-          <button
-            onClick={() => navigate('/catalog')}
-            className={`navbar-link ${isActive('/catalog') ? 'active' : ''}`}
-          >
+          <button onClick={() => navigate("/catalog")} className={`navbar-link ${isActive("/catalog") ? "active" : ""}`}>
             Katalog
           </button>
-          <button
-            onClick={() => navigate('/profile')}
-            className={`navbar-link ${isActive('/profile') ? 'active' : ''}`}
-          >
+          <button onClick={() => navigate("/profile")} className={`navbar-link ${isActive("/profile") ? "active" : ""}`}>
             <span className="navbar-icon">👤</span>
           </button>
         </div>
