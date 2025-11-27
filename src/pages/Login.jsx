@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setToken, decodeToken } from "../services/tokenManager";
+import AuthService from "../services/auth";  
 
 export default function Login({ setUser }) {
   const [email, setEmail] = useState('');
@@ -16,30 +16,26 @@ export default function Login({ setUser }) {
 
     setLoading(true);
 
-    try {
-      // DEMO MODE: Skip actual API call
-      const mockToken = btoa(JSON.stringify({
-        userId: '123',
-        name: email.split('@')[0],
-        email: email,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 24 hours
-      }));
+  try {
+      const data = await AuthService.login(email, password);
+      // data.user: { id, fullName, email, role }
 
-      setToken(mockToken);
-      
-      const decoded = decodeToken(mockToken);
-      setUser({ 
-        name: decoded.name, 
-        email: decoded.email 
+      setUser({
+        id: data.user.id,
+        name: data.user.fullName,
+        email: data.user.email,
+        role: data.user.role,
       });
-      
+
       navigate('/');
     } catch (error) {
-      alert('Login gagal: ' + error.message);
+      console.error(error);
+      alert('Login gagal: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="login-container">

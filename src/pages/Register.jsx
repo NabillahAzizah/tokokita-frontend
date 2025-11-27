@@ -1,12 +1,13 @@
+// src/pages/Register.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setToken, decodeToken } from "../services/tokenManager";
+import AuthService from "../services/auth";
 
 export default function Register({ setUser }) {
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async () => {
@@ -18,25 +19,21 @@ export default function Register({ setUser }) {
     setLoading(true);
 
     try {
-      // DEMO MODE
-      const mockToken = btoa(JSON.stringify({
-        userId: '123',
-        name: fullName,
-        email: email,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24)
-      }));
+      // 🔐 Panggil backend beneran
+      const data = await AuthService.register(fullName, email, password);
+      // data.user: { id, fullName, email, role }
 
-      setToken(mockToken);
-      
-      const decoded = decodeToken(mockToken);
-      setUser({ 
-        name: decoded.name, 
-        email: decoded.email 
+      setUser({
+        id: data.user.id,
+        name: data.user.fullName,
+        email: data.user.email,
+        role: data.user.role,
       });
-      
+
       navigate('/');
     } catch (error) {
-      alert('Registrasi gagal: ' + error.message);
+      console.error(error);
+      alert('Registrasi gagal: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

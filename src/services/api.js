@@ -1,7 +1,7 @@
 import TokenManager from "../services/tokenManager";
 
 // ===== SERVICE: API Configuration =====
-const API_BASE_URL = 'https://api.tokokita.com'; // Ganti dengan URL backend Anda
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
 
 const api = {
   // Interceptor untuk menambahkan JWT ke setiap request

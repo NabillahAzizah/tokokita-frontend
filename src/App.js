@@ -1,3 +1,4 @@
+// src/App.js
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -10,7 +11,12 @@ import Profile from "./pages/Profile";
 import PrivateRoute from "./components/PrivateRoute";
 
 import { sendClickEvent } from "./services/clickstream";
-import { getToken, clearToken, decodeToken } from "./services/tokenManager";
+import {
+  getToken,
+  clearToken,
+  decodeToken,
+  isTokenValid,
+} from "./services/tokenManager";
 
 import ProductService from "./services/productService";
 import MOCK_PRODUCTS from "./data/mockProduct";
@@ -20,26 +26,42 @@ function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [viewedProducts, setViewedProducts] = useState([]);
 
-  // Initialize user from token on app load
+  // ✅ Initialize user from token + localStorage on app load
   useEffect(() => {
     const token = getToken();
-    if (token) {
+    const storedUser = localStorage.getItem("tk_user");
+
+    // kalau tidak ada token atau token sudah tidak valid → bersihkan semua
+    if (!token || !isTokenValid()) {
+      clearToken();
+      localStorage.removeItem("tk_user");
+      return;
+    }
+
+    // kalau ada user yang sudah disimpan di localStorage
+    if (storedUser) {
       try {
-        const decoded = decodeToken(token);
-        if (decoded) {
-          setUser({
-            name: decoded.name,
-            email: decoded.email
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decode token:', error);
-        clearToken();
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (e) {
+        console.error("Failed to parse stored user:", e);
+        localStorage.removeItem("tk_user");
+      }
+    } else {
+      // fallback minimal user dari payload JWT (kalau suatu saat mau dipakai)
+      const decoded = decodeToken(token);
+      if (decoded && decoded.userId) {
+        setUser({
+          id: decoded.userId,
+          name: decoded.name || "User",
+          email: decoded.email || "",
+          role: decoded.role || "user",
+        });
       }
     }
   }, []);
 
-  // Fetch recommendations when user logs in (from backend)
+  // 🔗 Fetch recommendations from backend when user logs in
   useEffect(() => {
     const token = getToken();
     if (!token || !user) return;
@@ -47,82 +69,82 @@ function App() {
     ProductService.getRecommendations()
       .then((r) => {
         if (Array.isArray(r) && r.length > 0) {
-          console.log('✅ Recommendations from backend:', r);
+          console.log("✅ Recommendations from backend:", r);
           setRecommendations(r);
         } else {
-          console.log('ℹ️ No recommendations from backend, will use local logic');
+          console.log(
+            "ℹ️ No recommendations from backend, will use local logic"
+          );
         }
       })
-      .catch(err => {
-        console.error('Failed to fetch recommendations:', err);
+      .catch((err) => {
+        console.error("Failed to fetch recommendations:", err);
       });
   }, [user]);
 
-  // 🔥 LOCAL RECOMMENDATION LOGIC
-  // Generate recommendations based on viewed products
+  // 🔥 LOCAL RECOMMENDATION LOGIC (fallback)
   useEffect(() => {
     if (viewedProducts.length === 0) {
       setRecommendations([]);
       return;
     }
 
-    // Get categories from viewed products
-    const viewedCategories = [...new Set(viewedProducts.map(p => p.category))];
-    
-    // Find products from same categories that haven't been viewed
-    const recommendedProducts = MOCK_PRODUCTS.filter(product => {
-      // Skip if already viewed
-      const isViewed = viewedProducts.find(vp => vp.id === product.id);
+    // Ambil kategori dari produk yang pernah dilihat
+    const viewedCategories = [
+      ...new Set(viewedProducts.map((p) => p.category)),
+    ];
+
+    // Cari produk lain di kategori yang sama tapi belum pernah dilihat
+    const recommendedProducts = MOCK_PRODUCTS.filter((product) => {
+      const isViewed = viewedProducts.find((vp) => vp.id === product.id);
       if (isViewed) return false;
-      
-      // Include if from same category as viewed products
+
       return viewedCategories.includes(product.category);
     });
 
-    // Take max 4 recommendations
     const finalRecommendations = recommendedProducts.slice(0, 4);
-    
-    console.log('🎯 Local recommendations generated:', {
+
+    console.log("🎯 Local recommendations generated:", {
       viewedProducts: viewedProducts.length,
       viewedCategories,
-      recommendations: finalRecommendations.length
+      recommendations: finalRecommendations.length,
     });
 
     setRecommendations(finalRecommendations);
   }, [viewedProducts]);
 
-  // Handle product view (clickstream)
+  // 📡 Handle product view + kirim clickstream
   const handleProductView = async (product) => {
-    console.log('👁️ Product viewed:', product.name);
-    
-    // Check if product already viewed
-    const isAlreadyViewed = viewedProducts.find(p => p.id === product.id);
-    
+    console.log("👁️ Product viewed:", product.name);
+
+    const isAlreadyViewed = viewedProducts.find((p) => p.id === product.id);
+
     if (!isAlreadyViewed) {
       setViewedProducts((prev) => {
         const updated = [...prev, product];
-        console.log('📊 Total viewed products:', updated.length);
+        console.log("📊 Total viewed products:", updated.length);
         return updated;
       });
     } else {
-      console.log('ℹ️ Product already viewed, skipping...');
+      console.log("ℹ️ Product already viewed, skipping...");
     }
 
     const token = getToken();
 
     if (token) {
       try {
-        await sendClickEvent('view', product);
-        console.log('✅ Clickstream event sent successfully');
+        await sendClickEvent("view", product);
+        console.log("✅ Clickstream event sent successfully");
       } catch (error) {
-        console.error('❌ Failed to send clickstream event:', error);
+        console.error("❌ Failed to send clickstream event:", error);
       }
     }
   };
 
   const handleLogout = () => {
-    console.log('🚪 Logging out...');
+    console.log("🚪 Logging out...");
     clearToken();
+    localStorage.removeItem("tk_user");
     setUser(null);
     setViewedProducts([]);
     setRecommendations([]);
@@ -167,10 +189,10 @@ function App() {
           path="/profile"
           element={
             <PrivateRoute>
-              <Profile 
-                user={user} 
-                viewedProducts={viewedProducts} 
-                onLogout={handleLogout} 
+              <Profile
+                user={user}
+                viewedProducts={viewedProducts}
+                onLogout={handleLogout}
               />
             </PrivateRoute>
           }

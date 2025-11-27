@@ -15,10 +15,10 @@ const AuthService = {
     return data;
   },
   
-  register: async (name, email, password) => {
+  register: async (fullName, email, password) => {
     const response = await api.request('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ fullName, email, password })
     });
     
     if (!response.ok) throw new Error('Registrasi gagal');
