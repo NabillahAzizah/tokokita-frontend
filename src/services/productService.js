@@ -10,7 +10,15 @@ const ProductService = {
   getAllProducts: async () => {
     const response = await api.request('/api/products');
     if (!response.ok) return [];
-    return await response.json();
+
+    const json = await response.json();
+    // backend: { success: true, data: [...] }
+    if (json && Array.isArray(json.data)) {
+      return json.data;
+    }
+
+    console.warn("Unexpected /api/products response format:", json);
+    return [];
   },
 
   checkout: async (items) => {

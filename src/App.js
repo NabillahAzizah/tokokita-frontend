@@ -25,41 +25,37 @@ function App() {
   const [user, setUser] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [viewedProducts, setViewedProducts] = useState([]);
+  const [products, setProducts] = useState(MOCK_PRODUCTS); // default dummy
+  const [productsLoadedFromAPI, setProductsLoadedFromAPI] = useState(false);
+  const [hasBackendRecommendations, setHasBackendRecommendations] = useState(false);
 
-  // ✅ Initialize user from token + localStorage on app load
+  // 🛒 Fetch semua produk dari backend (dengan fallback ke MOCK_PRODUCTS)
   useEffect(() => {
-    const token = getToken();
-    const storedUser = localStorage.getItem("tk_user");
-
-    // kalau tidak ada token atau token sudah tidak valid → bersihkan semua
-    if (!token || !isTokenValid()) {
-      clearToken();
-      localStorage.removeItem("tk_user");
-      return;
-    }
-
-    // kalau ada user yang sudah disimpan di localStorage
-    if (storedUser) {
+    const fetchProducts = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch (e) {
-        console.error("Failed to parse stored user:", e);
-        localStorage.removeItem("tk_user");
+        const data = await ProductService.getAllProducts();
+
+        if (Array.isArray(data) && data.length > 0) {
+          console.log("✅ Products from backend:", data);
+          setProducts(data);
+          setProductsLoadedFromAPI(true);
+        } else {
+          console.log(
+            "ℹ️ No products from backend, using MOCK_PRODUCTS as fallback"
+          );
+          setProducts(MOCK_PRODUCTS);
+          setProductsLoadedFromAPI(false);
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch products, using MOCK_PRODUCTS:", err);
+        setProducts(MOCK_PRODUCTS);
+        setProductsLoadedFromAPI(false);
       }
-    } else {
-      // fallback minimal user dari payload JWT (kalau suatu saat mau dipakai)
-      const decoded = decodeToken(token);
-      if (decoded && decoded.userId) {
-        setUser({
-          id: decoded.userId,
-          name: decoded.name || "User",
-          email: decoded.email || "",
-          role: decoded.role || "user",
-        });
-      }
-    }
+    };
+
+    fetchProducts();
   }, []);
+
 
   // 🔗 Fetch recommendations from backend when user logs in
   useEffect(() => {
@@ -71,19 +67,28 @@ function App() {
         if (Array.isArray(r) && r.length > 0) {
           console.log("✅ Recommendations from backend:", r);
           setRecommendations(r);
+          setHasBackendRecommendations(true); // pakai rekomendasi backend
         } else {
           console.log(
             "ℹ️ No recommendations from backend, will use local logic"
           );
+          setHasBackendRecommendations(false); // backend tidak ada, pakai lokal
         }
       })
       .catch((err) => {
         console.error("Failed to fetch recommendations:", err);
+        setHasBackendRecommendations(false); // error → pakai lokal
       });
   }, [user]);
 
   // 🔥 LOCAL RECOMMENDATION LOGIC (fallback)
   useEffect(() => {
+    // kalau sudah ada rekomendasi dari backend, jangan override dengan lokal
+    if (hasBackendRecommendations) {
+      console.log("✅ Using backend recommendations, skip local logic");
+      return;
+    }
+
     if (viewedProducts.length === 0) {
       setRecommendations([]);
       return;
@@ -111,7 +116,7 @@ function App() {
     });
 
     setRecommendations(finalRecommendations);
-  }, [viewedProducts]);
+  }, [viewedProducts, hasBackendRecommendations]);
 
   // 📡 Handle product view + kirim clickstream
   const handleProductView = async (product) => {
@@ -148,6 +153,7 @@ function App() {
     setUser(null);
     setViewedProducts([]);
     setRecommendations([]);
+    setHasBackendRecommendations(false);
   };
 
   return (
@@ -177,9 +183,10 @@ function App() {
             <PrivateRoute>
               <Catalog
                 user={user}
-                MOCK_PRODUCTS={MOCK_PRODUCTS}
+                products={products}
                 viewedProducts={viewedProducts}
                 handleProductView={handleProductView}
+                productsLoadedFromAPI={productsLoadedFromAPI}
               />
             </PrivateRoute>
           }
