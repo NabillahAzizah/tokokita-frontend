@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthService from "../services/auth";
@@ -19,10 +18,10 @@ export default function Register({ setUser }) {
     setLoading(true);
 
     try {
+      console.log("🔄 Attempting registration...", { fullName, email });
       // 🔐 Panggil backend beneran
       const data = await AuthService.register(fullName, email, password);
       // data.user: { id, fullName, email, role }
-
       setUser({
         id: data.user.id,
         name: data.user.fullName,
@@ -33,7 +32,18 @@ export default function Register({ setUser }) {
       navigate('/');
     } catch (error) {
       console.error(error);
-      alert('Registrasi gagal: ' + (error.message || 'Unknown error'));
+      let errorMessage = 'Registrasi gagal. ';
+
+      if (error.message) {
+        errorMessage += error.message;
+      } else if (error.response) {
+        errorMessage += `Server error: ${error.response.status}`;
+      } else {
+        errorMessage += 'Silakan coba lagi atau periksa koneksi backend.';
+      }
+      
+      alert(errorMessage);
+
     } finally {
       setLoading(false);
     }
@@ -43,6 +53,10 @@ export default function Register({ setUser }) {
     <div className="register-container">
       <div className="register-card">
         <div className="register-header">
+          <div className="login-icons">
+            <span className="icon-cart">🛒</span>
+            <span className="icon-lock">🔒</span>
+          </div>
           <h1 className="register-title">Daftar Akun</h1>
           <p className="register-subtitle">Buat akun baru di TokoKita</p>
         </div>

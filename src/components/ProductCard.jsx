@@ -1,20 +1,44 @@
 import React from "react";
-import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // NEW
+
 // ===== COMPONENT: Product Card =====
 const ProductCard = ({ product, onView }) => {
+  const navigate = useNavigate();
+
+   const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Product card clicked:", product);
+    
+    // Track the view first
+    if (onView) {
+      onView(product);
+    }
+    
+    // Then navigate to product detail
+    const productId = product.id || product._id;
+    console.log("Navigating to product:", productId);
+    navigate(`/product/${productId}`);
+  };
+
   return (
     <div 
-      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all p-6 cursor-pointer"
-      onClick={() => onView(product)}
+      className="product-card"
+      onClick={handleClick}
+      style={{ cursor: 'pointer' }}
     >
-      <div className="text-6xl mb-4 text-center">{product.image}</div>
-      <h3 className="font-bold text-lg mb-2">{product.name}</h3>
-      <p className="text-gray-600 text-sm mb-3">{product.category}</p>
-      <p className="text-blue-600 font-bold text-xl">
-        Rp {product.price.toLocaleString('id-ID')}
+      <div className="product-icon">{product.image || '🛍️'}</div>
+      <h3 className="product-name">{product.name}</h3>
+      <p className="product-category">{product.category}</p>
+      <p className="product-price">
+        Rp {(product.price || 0).toLocaleString('id-ID')}
       </p>
-      <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center space-x-2">
-        <Eye size={16} />
+      <button 
+        className="product-button"
+        onClick={handleClick}
+      >
+        <span className="product-button-icon">👁️</span>
         <span>Lihat Detail</span>
       </button>
     </div>

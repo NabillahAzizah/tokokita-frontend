@@ -1,4 +1,5 @@
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar"
+import ProductCard from "../components/ProductCard";
 import { getToken, decodeToken } from "../services/tokenManager";
 
 export default function Catalog({
@@ -40,31 +41,16 @@ export default function Catalog({
         {hasProducts ? (
           <div className="product-grid">
             {products.map((product) => (
-              <div
+              <ProductCard
                 key={product.id || product._id}
-                className="product-card"
-                onClick={() => handleProductView(product)}
-              >
-                <div className="product-icon">
-                  {product.image || "🛍️"}
-                </div>
-                <h3 className="product-name">{product.name}</h3>
-                <p className="product-category">
-                  {product.category || "Produk"}
-                </p>
-                <p className="product-price">
-                  Rp {(product.price || 0).toLocaleString("id-ID")}
-                </p>
-                <button className="product-button">
-                  <span className="product-button-icon">👁️</span>
-                  <span>Lihat Detail</span>
-                </button>
-              </div>
+                product={product}
+                onView={handleProductView}
+              />
             ))}
           </div>
         ) : (
           <div className="empty-state">
-            <div className="empty-state-icon">📭</div>
+            <div className="empty-state-icon">🔭</div>
             <h2 className="empty-state-title">Belum ada produk</h2>
             <p className="empty-state-text">
               Produk belum tersedia di sistem. Silakan cek kembali konfigurasi
