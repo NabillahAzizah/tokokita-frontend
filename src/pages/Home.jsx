@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import ProductCard from "../components/ProductCard";
 import { getToken, decodeToken } from "../services/tokenManager";
 
 export default function Home({ user, recommendations, handleProductView }) {
@@ -34,22 +35,11 @@ export default function Home({ user, recommendations, handleProductView }) {
           <>
             <div className="product-grid">
               {recommendations.map((product) => (
-                <div 
-                  key={product.id} 
-                  className="product-card"
-                  onClick={() => handleProductView(product)}
-                >
-                  <div className="product-icon">{product.image}</div>
-                  <h3 className="product-name">{product.name}</h3>
-                  <p className="product-category">{product.category}</p>
-                  <p className="product-price">
-                    Rp {product.price.toLocaleString('id-ID')}
-                  </p>
-                  <button className="product-button">
-                    <span className="product-button-icon">👁️</span>
-                    <span>Lihat Detail</span>
-                  </button>
-                </div>
+                <ProductCard
+                  key={product.id || product._id}
+                  product={product}
+                  onView={handleProductView}
+                />
               ))}
             </div>
 
@@ -83,7 +73,7 @@ export default function Home({ user, recommendations, handleProductView }) {
             <div className="info-box">
               <span className="info-icon">💡</span>
               <p className="info-text">
-                <strong>Info:</strong> Setiap klik produk akan mengirim
+                <strong className="info-label">Info:</strong> Setiap klik produk akan mengirim
                 clickstream event yang diamankan dengan JWT token Anda
               </p>
             </div>

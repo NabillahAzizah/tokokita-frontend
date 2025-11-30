@@ -7,6 +7,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Catalog from "./pages/Catalog";
 import Profile from "./pages/Profile";
+import ProductDetail from "./pages/ProductDetail"; 
+import Checkout from "./pages/Checkout"; 
 
 import PrivateRoute from "./components/PrivateRoute";
 
@@ -25,9 +27,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [viewedProducts, setViewedProducts] = useState([]);
-  const [products, setProducts] = useState(MOCK_PRODUCTS); // default dummy
+  const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [productsLoadedFromAPI, setProductsLoadedFromAPI] = useState(false);
   const [hasBackendRecommendations, setHasBackendRecommendations] = useState(false);
+  const [cart, setCart] = useState([]); // Cart state
 
   // 🛒 Fetch semua produk dari backend (dengan fallback ke MOCK_PRODUCTS)
   useEffect(() => {
@@ -56,7 +59,6 @@ function App() {
     fetchProducts();
   }, []);
 
-
   // 🔗 Fetch recommendations from backend when user logs in
   useEffect(() => {
     const token = getToken();
@@ -67,23 +69,22 @@ function App() {
         if (Array.isArray(r) && r.length > 0) {
           console.log("✅ Recommendations from backend:", r);
           setRecommendations(r);
-          setHasBackendRecommendations(true); // pakai rekomendasi backend
+          setHasBackendRecommendations(true);
         } else {
           console.log(
             "ℹ️ No recommendations from backend, will use local logic"
           );
-          setHasBackendRecommendations(false); // backend tidak ada, pakai lokal
+          setHasBackendRecommendations(false);
         }
       })
       .catch((err) => {
         console.error("Failed to fetch recommendations:", err);
-        setHasBackendRecommendations(false); // error → pakai lokal
+        setHasBackendRecommendations(false);
       });
   }, [user]);
 
   // 🔥 LOCAL RECOMMENDATION LOGIC (fallback)
   useEffect(() => {
-    // kalau sudah ada rekomendasi dari backend, jangan override dengan lokal
     if (hasBackendRecommendations) {
       console.log("✅ Using backend recommendations, skip local logic");
       return;
@@ -94,16 +95,13 @@ function App() {
       return;
     }
 
-    // Ambil kategori dari produk yang pernah dilihat
     const viewedCategories = [
       ...new Set(viewedProducts.map((p) => p.category)),
     ];
 
-    // Cari produk lain di kategori yang sama tapi belum pernah dilihat
     const recommendedProducts = MOCK_PRODUCTS.filter((product) => {
       const isViewed = viewedProducts.find((vp) => vp.id === product.id);
       if (isViewed) return false;
-
       return viewedCategories.includes(product.category);
     });
 
@@ -146,6 +144,22 @@ function App() {
     }
   };
 
+  // 🛒 NEW: Handle add to cart
+  const handleAddToCart = (item) => {
+    setCart((prev) => {
+      const existingItem = prev.find(p => p.id === item.id);
+      if (existingItem) {
+        return prev.map(p => 
+          p.id === item.id 
+            ? { ...p, quantity: p.quantity + item.quantity }
+            : p
+        );
+      }
+      return [...prev, item];
+    });
+    console.log("🛒 Added to cart:", item);
+  };
+
   const handleLogout = () => {
     console.log("🚪 Logging out...");
     clearToken();
@@ -154,6 +168,7 @@ function App() {
     setViewedProducts([]);
     setRecommendations([]);
     setHasBackendRecommendations(false);
+    setCart([]); // Clear cart on logout
   };
 
   return (
@@ -188,6 +203,30 @@ function App() {
                 handleProductView={handleProductView}
                 productsLoadedFromAPI={productsLoadedFromAPI}
               />
+            </PrivateRoute>
+          }
+        />
+
+        {/*Product Detail Route */}
+        <Route
+          path="/product/:id"
+          element={
+            <PrivateRoute>
+              <ProductDetail
+                products={products}
+                onAddToCart={handleAddToCart}
+                handleProductView={handleProductView}
+              />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Checkout Route */}
+        <Route
+          path="/checkout"
+          element={
+            <PrivateRoute>
+              <Checkout cart={cart} />
             </PrivateRoute>
           }
         />

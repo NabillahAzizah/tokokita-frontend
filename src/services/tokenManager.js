@@ -1,4 +1,3 @@
-// ===== SERVICES : Token Manager =====
 const TokenManager = {
   setToken: (token) => {
     try {
